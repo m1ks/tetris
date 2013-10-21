@@ -8,12 +8,15 @@ import java.awt.event.*;
 import javax.swing.*;
 import java.util.*;
 
+enum Rotation {LEFT, RIGHT};
+
 class Glass
 {
   private int width = 10;
   private int height = 20;
   private int score = 0;
   private Color[] colors = new Color[] {Color.red, Color.orange, Color.yellow, Color.green, Color.cyan, Color.blue, Color.magenta};
+
   Position [][] positions;
   Figure figure;
   Figure nextFigure;
@@ -135,13 +138,20 @@ class Glass
     }
   }
 
-  void rotateFigure() {
+  void rotateFigure(Rotation rotation) {
     int[][] newPositions = new int[figure.positions[0].length][figure.positions.length];
-    for (int i=0; i<figure.positions.length; i++) {
-      for (int j=0; j<figure.positions[i].length; j++) {
-        newPositions[j][i] = figure.positions[i][figure.positions[i].length-1-j];
+    if (rotation == Rotation.LEFT) {
+      for (int i=0; i<figure.positions.length; i++) {
+        for (int j=0; j<figure.positions[i].length; j++) {
+        if(rotation == Rotation.LEFT)
+          newPositions[j][i] = figure.positions[i][figure.positions[i].length-1-j];
+        }
+        else {
+          newPositions[j][figure.positions.length-1-i] = figure.positions[i][j];
+        }
       }
     }
+
     if (canPlacePositions(figure.x, figure.y, newPositions)) {
       figure.positions = newPositions;
     }
@@ -303,14 +313,14 @@ public class Tetris extends JPanel implements KeyListener
         st.moveFigure(1,0);
       }
       else if (keyCode == KeyEvent.VK_DOWN) {
-        st.moveFigure(0,1);
+        st.rotateFigure(Rotation.RIGHT);
       }
       else if (keyCode == KeyEvent.VK_SPACE) {
         while(st.moveFigure(0,1)) {
         }
       }
       else if (keyCode == KeyEvent.VK_UP) {
-        st.rotateFigure();
+        st.rotateFigure(Rotation.LEFT);
       }
     }
     if (st.isFull && keyCode == KeyEvent.VK_SPACE) {
@@ -366,8 +376,8 @@ public class Tetris extends JPanel implements KeyListener
         while (true) {
           try {
             synchronized (tetris) {
-              tetris.processKey(KeyEvent.VK_DOWN);
-              Thread.sleep(250);
+              tetris.getGlass().moveFigure(0,1);
+              Thread.sleep(500);
               tetris.hold();
             }
           }
