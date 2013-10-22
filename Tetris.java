@@ -15,6 +15,8 @@ class Glass
   private int width = 10;
   private int height = 20;
   private int score = 0;
+  private int level = 1;
+  private int speed = 500;
   private Color[] colors = new Color[] {Color.red, Color.orange, Color.yellow, Color.green, Color.cyan, Color.blue, Color.magenta};
 
   Position [][] positions;
@@ -76,7 +78,7 @@ class Glass
     return canPlace;
   }
 
-  private void clearLines() 
+  private int clearLines() 
   {
     int k = 0;
     for (int i=positions.length-1; i>=k; i--) 
@@ -104,18 +106,7 @@ class Glass
         k++;
       }
     }
-    if (k==1) {
-      score+=100;
-    }
-    else if (k==2) {
-      score+=300;
-    }
-    else if (k==3) {
-      score+=700;
-    }
-    else if (k==4) {
-      score+=1500;
-    }
+    return k;
   }
 
   void holdFigure() {
@@ -132,7 +123,28 @@ class Glass
           }
         }
       }
-      clearLines();
+      int k = clearLines();
+      if (k==0) {
+        score+=25;
+      }
+      if (k==1) {
+        score+=100;
+      }
+      else if (k==2) {
+        score+=300;
+      }
+      else if (k==3) {
+        score+=700;
+      }
+      else if (k==4) {
+        score+=1500;
+      }
+      int check = score / 1500 + 1;
+      if (check >level) {
+        level = check;
+        speed = speed - 250/level;
+      }
+
       figure = nextFigure;
       nextFigure = generateFigure();
     }
@@ -140,10 +152,9 @@ class Glass
 
   void rotateFigure(Rotation rotation) {
     int[][] newPositions = new int[figure.positions[0].length][figure.positions.length];
-    if (rotation == Rotation.LEFT) {
-      for (int i=0; i<figure.positions.length; i++) {
-        for (int j=0; j<figure.positions[i].length; j++) {
-        if(rotation == Rotation.LEFT)
+    for (int i=0; i<figure.positions.length; i++) {
+      for (int j=0; j<figure.positions[i].length; j++) {
+        if(rotation == Rotation.LEFT) {
           newPositions[j][i] = figure.positions[i][figure.positions[i].length-1-j];
         }
         else {
@@ -168,6 +179,14 @@ class Glass
 
   public int getScore() {
     return score;
+  }
+
+  public int getLevel() {
+    return level;
+  }
+
+  public int getSpeed() {
+    return speed;
   }
 
   public int getWidth() {
@@ -211,7 +230,14 @@ public class Tetris extends JPanel implements KeyListener
   private int blockHeight = 0;
 
   private Glass st = new Glass();
-  
+
+  public Tetris() {
+    super();
+    setOpaque(true);
+    setPreferredSize(new Dimension(240*3/2, 240*getGlass().getHeight()/getGlass().getWidth()));
+    setBackground(Color.black);
+  }
+
   public Glass getGlass() {
     return st;
   }
@@ -263,6 +289,21 @@ public class Tetris extends JPanel implements KeyListener
     g2.drawString(s,x,y);
   }
 
+  public void drawLevel(Graphics2D g2) {
+    final Font f = new Font("SansSerif", Font.PLAIN, 24);
+    g2.setFont(f);
+    FontMetrics fm = g2.getFontMetrics();
+    String s = "Level:";
+    int x = getWidth()*2/3+(getWidth()*1/3-fm.stringWidth(s))/2;
+    int y = (fm.getAscent()+(getHeight()-(fm.getAscent()+fm.getDescent()))*1/3);
+    g2.setColor(fg);
+    g2.drawString(s,x,y);
+    s = ""+st.getLevel();
+    x = getWidth()*2/3+(getWidth()*1/3-fm.stringWidth(s))/2;
+    y += (fm.getAscent()+fm.getDescent());
+    g2.drawString(s,x,y);
+  }
+
   public void drawFigure(Graphics2D g2) {
     g2.setColor(st.figure.color);
     for (int i=0; i<st.figure.positions.length; i++) {
@@ -296,6 +337,7 @@ public class Tetris extends JPanel implements KeyListener
     drawNextFigure(g2);
     drawGlass(g2);
     drawScore(g2);
+    drawLevel(g2);
   }
 
   public void keyTyped(KeyEvent e) {
@@ -349,13 +391,6 @@ public class Tetris extends JPanel implements KeyListener
   public void keyPressed(KeyEvent e) {
     processKey(e.getKeyCode());
   }
-  
-  public Tetris() {
-    super();
-    setOpaque(true);
-    setPreferredSize(new Dimension(240*3/2, 240*getGlass().getHeight()/getGlass().getWidth()));
-    setBackground(Color.black);
-  }
 
   private static void createAndShowGUI() {
     //JFrame.setDefaultLookAndFeelDecorated(true);
@@ -365,6 +400,7 @@ public class Tetris extends JPanel implements KeyListener
     f.setBackground(Color.black);
 
     final Tetris tetris = new Tetris();
+    int delay = 500;
 
     f.getContentPane().add(tetris,BorderLayout.CENTER);
     f.addKeyListener(tetris);
@@ -377,7 +413,7 @@ public class Tetris extends JPanel implements KeyListener
           try {
             synchronized (tetris) {
               tetris.getGlass().moveFigure(0,1);
-              Thread.sleep(500);
+              Thread.sleep(tetris.getGlass().getSpeed());
               tetris.hold();
             }
           }
